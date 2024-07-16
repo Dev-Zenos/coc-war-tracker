@@ -8,6 +8,7 @@ const { parse } = require('dotenv');
 var serviceAccountAuth;
 var doc;
 var sheetIndex = 5;
+var seperator = 17;
 
 
 module.exports = {
@@ -56,6 +57,8 @@ module.exports = {
                 arr.push(message);
                 message = "```";
             }
+            if(counter + 1 == seperator)
+                message += "-------------------------------------\n";
             counter++;
         }
         message += "```";
