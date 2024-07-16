@@ -13,6 +13,7 @@ module.exports = {
 
         await initSheet();
         const CSVBuffer = await doc.sheetsByIndex[4].downloadAsCSV(true);
+        const CWLBuffer = await doc.sheetsByIndex[5].downloadAsCSV(true);
 
   
 
@@ -21,7 +22,12 @@ module.exports = {
             files: [{
                 attachment: CSVBuffer,
                 name: 'export.csv'
-            }]
+                },
+                {
+                    attachment: CWLBuffer,
+                    name: 'cwl.csv'
+                },
+            ]
         });
     },
 }
