@@ -4,21 +4,20 @@ const MemberSchema = require('./../models/war_data');
 const { GoogleSpreadsheet } =  require('google-spreadsheet');
 const {JWT} = require('google-auth-library');
 const { parse } = require('dotenv');
+const fs = require('fs');
 
 var serviceAccountAuth;
 var doc;
-var sheetIndex = 5;
-var seperator = 17;
+var sheetIndex = 4;
 
 
 module.exports = {
-    data: new SlashCommandBuilder().setName('cwl_list').setDescription('People eligible for cwl in Pro Rebels :D'), 
+    data: new SlashCommandBuilder().setName('idkname_permanent').setDescription('Permanently Gets your clan score!'), 
     run: async({ interaction }) => {
         await interaction.deferReply();
         await initSheet();
         const sheet = doc.sheetsByIndex[sheetIndex];
         const rows = await sheet.getRows(); // can pass in { limit, offset }
-        //console.log(rows.length);
 
         let scores = [];
         let names = [];
@@ -28,8 +27,8 @@ module.exports = {
         const totalScoreWidth = 8; // adjust as needed
         for (const row of rows) {
             let name = row.get('Name').padEnd(nameWidth, ' ');
-            let warScore = parseInt(row.get('Total war score')).toString().padEnd(warScoreWidth, ' ');
-            let donosScore = parseInt(row.get('Donos score')).toString().padEnd(donosScoreWidth, ' ');
+            let warScore = row.get('Total war score').toString().padEnd(warScoreWidth, ' ');
+            let donosScore = row.get('Donos score').toString().padEnd(donosScoreWidth, ' ');
             let totalScore = row.get('Total score');
             //console.log(totalScore);
             if(!isNaN(parseInt(totalScore))){
@@ -57,24 +56,45 @@ module.exports = {
                 arr.push(message);
                 message = "```";
             }
-            if(counter + 1 == seperator)
-                message += "-------------------------------------\n";
             counter++;
         }
         if(message.length > 3){
             message += "```";
             arr.push(message);
         }
-        //message += "```";
-        await interaction.editReply("Here are the people eligible for cwl: ");
+        await interaction.editReply("Here is the clan score: ");
+        const channel = interaction.channel.id;
+        const messageArr = [];
         for(const msg of arr){
-            await interaction.channel.send(msg);
+            const messages = await interaction.channel.send(msg);
+            messageArr.push(messages.id);
         }
-        //await interaction.channel.send(message);
+        //console.log(messageArr);
+        //console.log(channel);
+        await updateConfig(channel, messageArr);
         
 
     },
     Globalcooldown_5s: true,
+}
+
+async function updateConfig(channel, messageArr){
+    fs.readFile('config.json', 'utf8', async(err, data) => {
+        if (err) {
+            console.error('Error reading config.json:', err);
+            return;
+        }
+        const configObject = JSON.parse(data);
+        configObject.IDKchannels.push({id: channel, messages: messageArr});
+
+        fs.writeFile('config.json', JSON.stringify(configObject, null, 2), (err) => {
+            if (err) {
+                console.error('Error writing config.json:', err);
+                return;
+            }
+            console.log('Config updated');
+        });
+    });
 }
 
 

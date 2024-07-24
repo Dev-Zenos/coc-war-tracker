@@ -8,6 +8,8 @@ const MemberSchema = require('./models/war_data');
 const warSchema = require('./models/wars');
 const { GoogleSpreadsheet } =  require('google-spreadsheet');
 const {JWT} = require('google-auth-library');
+const fs = require('fs');
+const { channel } = require('diagnostics_channel');
 
 
 
@@ -52,8 +54,12 @@ client.on('ready', async (c) => {
     await connectDB();
     await initSheet();
 
+    await fetchAndLogConfig();
+    //await fetchAndLogConfigCWL();
     await saveData();
     const interval2 = setInterval(saveData, 5 * 60 * 1000); // 30 minutes in milliseconds
+    const interval = setInterval(fetchAndLogConfig, 30 * 60 * 1000); // 30 minutes in milliseconds
+    const interval3 = setInterval(fetchAndLogConfigCWL, 33 * 60 * 1000); // 30 minutes in milliseconds
 })
 
 
@@ -169,4 +175,232 @@ async function checkWar(clan){
         console.log("Updated war in database");
       }  
     
+}
+
+async function fetchAndLogConfig() {
+  const messages = await fetchIdkName();
+  fs.readFile('config.json', 'utf8', async(err, data) => {
+      if (err) {
+          console.error('Error reading config.json:', err);
+          return;
+      }
+          let globalIndex = -1;
+          const configObject = JSON.parse(data);
+          //console.log("Length: " + configObject.IDKchannels.length);
+          //console.log('Config:', configObject);
+          //console.log(msg);
+          for(const channelId of configObject.IDKchannels){
+              const channel = client.channels.cache.get(channelId.id);
+                const sendMessages = 
+                  async() => {
+                    while(channelId.messages.length < messages.length){
+                      const message = await channel.send("placeholder");
+                      channelId.messages.push(message.id);
+                    }
+                    //console.log(globalIndex);
+                    let index = 0;
+                    for(const msg of channelId.messages){
+                      const message = await channel.messages.fetch(`${msg}`)
+
+                      if(index >= messages.length){
+                        await message.edit("");
+                      }
+                      else{
+                        await message.edit(messages[index]);
+                      }
+                      index++;
+
+                    }
+                  }
+                  globalIndex++;
+                  await sendMessages();
+              }
+          //console.log(configObject);
+          await updateConfig(configObject);
+  });
+}
+
+async function fetchAndLogConfigCWL() {
+  console.log("Fetching and logging config");
+  const messages = await fetchCWL();
+  fs.readFile('config.json', 'utf8', async(err, data) => {
+      if (err) {
+          console.error('Error reading config.json:', err);
+          return;
+      }
+          let globalIndex = -1;
+          const configObject = JSON.parse(data);
+          //console.log("Length: " + configObject.IDKchannels.length);
+          //console.log('Config:', configObject);
+          //console.log(msg);
+          for(const channelId of configObject.CWLchannels){
+              const channel = client.channels.cache.get(channelId.id);
+                const sendMessages = 
+                  async() => {
+                    while(channelId.messages.length < messages.length){
+                      const message = await channel.send("placeholder");
+                      channelId.messages.push(message.id);
+                    }
+                    //console.log(globalIndex);
+                    let index = 0;
+                    for(const msg of channelId.messages){
+                      const message = await channel.messages.fetch(`${msg}`)
+
+                      if(index >= messages.length){
+                        await message.edit("");
+                      }
+                      else{
+                        await message.edit(messages[index]);
+                      }
+                      index++;
+
+                    }
+                  }
+                  globalIndex++;
+                  await sendMessages();
+              }
+          //console.log(configObject);
+          await updateConfig(configObject);
+  });
+}
+
+async function updateConfig(updatedConfig){
+  fs.writeFile('config.json', JSON.stringify(updatedConfig, null, 2), (err) => {
+      if (err) {
+          console.error('Error writing config.json:', err);
+          return;
+      }
+      console.log('Config updated');
+  });
+
+
+}
+
+async function fetchCWL(){
+  const sheet = doc.sheetsByIndex[5];
+  const rows = await sheet.getRows(); // can pass in { limit, offset }
+  //console.log(rows.length);
+
+  let scores = [];
+  let names = [];
+  const nameWidth = 16; // adjust as needed
+  const warScoreWidth = 6; // adjust as needed
+  const donosScoreWidth = 7; // adjust as needed
+  const totalScoreWidth = 8; // adjust as needed
+  for (const row of rows) {
+      let name = row.get('Name').padEnd(nameWidth, ' ');
+      let warScore = parseInt(row.get('Total war score')).toString().padEnd(warScoreWidth, ' ');
+      let donosScore = parseInt(row.get('Donos score')).toString().padEnd(donosScoreWidth, ' ');
+      let totalScore = row.get('Total score');
+      //console.log(totalScore);
+      if(!isNaN(parseInt(totalScore))){
+          names.push(`${name}${warScore}${donosScore}`);
+          //console.log(parseInt(totalScore));
+          scores.push(parseInt(totalScore));
+      }
+  }
+  console.log(scores.length);
+  console.log(names.length);
+  const { sortedScores, sortedNames } = sortScoresAndNames(scores, names);
+
+  //loop through rows
+  let arr = [];
+  let startStr = "No. Name            War   Dono   Total   \n";
+  let message = "```"+startStr;
+  let counter = 0;
+  for (const row of sortedNames) {
+      let formattedScore = sortedScores[counter].toString().padEnd(totalScoreWidth, ' ');
+      let rank = (counter + 1).toString().padEnd(4, ' ');
+      //console.log(sortedScores[counter]);
+      message += rank + row + formattedScore + "\n";
+      if(message.length > 1800){
+          message += "```";
+          arr.push(message);
+          message = "```";
+      }
+      if(counter + 1 == 17)
+          message += "-------------------------------------\n";
+      counter++;
+  }
+  if(message.length > 3){
+      message += "```";
+      arr.push(message);
+  }
+  //message += "```";
+  return arr;
+  //await interaction.channel.send(message);
+  
+
+}
+
+
+
+
+async function fetchIdkName(){
+  const sheet = doc.sheetsByIndex[4];
+        const rows = await sheet.getRows(); // can pass in { limit, offset }
+
+        let scores = [];
+        let names = [];
+        const nameWidth = 16; // adjust as needed
+        const warScoreWidth = 6; // adjust as needed
+        const donosScoreWidth = 7; // adjust as needed
+        const totalScoreWidth = 8; // adjust as needed
+        for (const row of rows) {
+            let name = row.get('Name').padEnd(nameWidth, ' ');
+            let warScore = row.get('Total war score').toString().padEnd(warScoreWidth, ' ');
+            let donosScore = row.get('Donos score').toString().padEnd(donosScoreWidth, ' ');
+            let totalScore = row.get('Total score');
+            //console.log(totalScore);
+            if(!isNaN(parseInt(totalScore))){
+                names.push(`${name}${warScore}${donosScore}`);
+                //console.log(parseInt(totalScore));
+                scores.push(parseInt(totalScore));
+            }
+        }
+        //console.log(scores.length);
+        //console.log(names.length);
+        const { sortedScores, sortedNames } = sortScoresAndNames(scores, names);
+  
+        //loop through rows
+        let arr = [];
+        let startStr = "No. Name            War   Dono   Total   \n";
+        let message = "```"+startStr;
+        let counter = 0;
+        for (const row of sortedNames) {
+            let formattedScore = sortedScores[counter].toString().padEnd(totalScoreWidth, ' ');
+            let rank = (counter + 1).toString().padEnd(4, ' ');
+            //console.log(sortedScores[counter]);
+            message += rank + row + formattedScore + "\n";
+            if(message.length > 1800){
+                message += "```";
+                arr.push(message);
+                message = "```";
+            }
+            counter++;
+        }
+        if(message.length > 3){
+          message += "```";
+          arr.push(message);
+        }
+        return arr;
+        
+
+}
+
+
+
+
+function sortScoresAndNames(scores, names) {
+    // Create an array of pairs (score, name)
+    let pairedArray = scores.map((score, index) => [score, names[index]]);
+
+    // Sort the paired array based on the score in descending order
+    pairedArray.sort((a, b) => b[0] - a[0]);
+
+    // Separate the paired array back into scores and names arrays
+    let sortedScores = pairedArray.map(pair => pair[0]);
+    let sortedNames = pairedArray.map(pair => pair[1]);
+
+    return { sortedScores, sortedNames };
 }

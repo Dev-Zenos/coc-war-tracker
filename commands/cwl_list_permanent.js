@@ -4,6 +4,7 @@ const MemberSchema = require('./../models/war_data');
 const { GoogleSpreadsheet } =  require('google-spreadsheet');
 const {JWT} = require('google-auth-library');
 const { parse } = require('dotenv');
+const fs = require('fs');
 
 var serviceAccountAuth;
 var doc;
@@ -12,7 +13,7 @@ var seperator = 17;
 
 
 module.exports = {
-    data: new SlashCommandBuilder().setName('cwl_list').setDescription('People eligible for cwl in Pro Rebels :D'), 
+    data: new SlashCommandBuilder().setName('cwl_list_permanent').setDescription('Permanently Shows, People eligible for cwl in Pro Rebels :D'), 
     run: async({ interaction }) => {
         await interaction.deferReply();
         await initSheet();
@@ -65,17 +66,42 @@ module.exports = {
             message += "```";
             arr.push(message);
         }
-        //message += "```";
         await interaction.editReply("Here are the people eligible for cwl: ");
+        const channel = interaction.channel.id;
+        const messageArr = [];
         for(const msg of arr){
-            await interaction.channel.send(msg);
+            const messages = await interaction.channel.send(msg);
+            messageArr.push(messages.id);
         }
+        //console.log(messageArr);
+        //console.log(channel);
+        await updateConfig(channel, messageArr);
         //await interaction.channel.send(message);
         
 
     },
     Globalcooldown_5s: true,
 }
+
+async function updateConfig(channel, messageArr){
+    fs.readFile('config.json', 'utf8', async(err, data) => {
+        if (err) {
+            console.error('Error reading config.json:', err);
+            return;
+        }
+        const configObject = JSON.parse(data);
+        configObject.CWLchannels.push({id: channel, messages: messageArr});
+
+        fs.writeFile('config.json', JSON.stringify(configObject, null, 2), (err) => {
+            if (err) {
+                console.error('Error writing config.json:', err);
+                return;
+            }
+            console.log('Config updated');
+        });
+    });
+}
+
 
 
 

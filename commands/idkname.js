@@ -57,12 +57,14 @@ module.exports = {
             }
             counter++;
         }
-        message += "```";
+        if(message.length > 3){
+            message += "```";
+            arr.push(message);
+        }
         await interaction.editReply("Here is the clan score: ");
         for(const msg of arr){
             await interaction.channel.send(msg);
         }
-        await interaction.channel.send(message);
         
 
     },

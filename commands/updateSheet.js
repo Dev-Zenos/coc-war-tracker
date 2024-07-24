@@ -59,11 +59,13 @@ async function updateSheet(updateData){
         //console.log(warScore);
       }
       if(indexObj.index != -1){
-        var orig = indexObj.row.get('Total war score');
-        indexObj.row.set('Total war score', parseInt(indexObj.row.get('Total war score')) + warScore);
+        //var orig = indexObj.row.get('Total war score');
+        //let marker = '' + updateData.opponent_clan_tag
+        // indexObj.row.set('Total war score', parseInt(indexObj.row.get('Total war score')) + warScore);
         indexObj.row.set(updateData.opponent_clan_tag, warScore);
-        indexObj.row.set('Total score', parseInt(indexObj.row.get('Total score'))  + warScore);
-        console.log(`Updated ${row.name} in row ${indexObj.index} with war score ${indexObj.row.get('Total war score')} from ${orig}`);
+        // indexObj.row.set('Total score', parseInt(indexObj.row.get('Total score'))  + warScore);
+        indexObj.row.assign({ 'Total war score': parseInt(indexObj.row.get('Total war score')) + warScore, 'Total score': parseInt(indexObj.row.get('Total score'))  + warScore });
+        //console.log(`Updated ${row.name} in row ${indexObj.index} with war score ${indexObj.row.get('Total war score')} from ${0}`);
         await indexObj.row.save();
       }
       else{
