@@ -24,6 +24,14 @@ const { channel } = require('diagnostics_channel');
 const coc_client = new API({ keys: [process.env.API_KEY] });
 var serviceAccountAuth;
 var doc;
+var coolDownArr = [];
+
+async function coolDown(){
+  coolDownArr.push("On Cooldown");;
+  //console.log(coolDownArr);
+  await new Promise(resolve => setTimeout(resolve, 60000));
+  coolDownArr = coolDownArr.filter(id => id != "On Cooldown");
+}
 
 const client = new Client({
     intents: [
@@ -52,14 +60,17 @@ new CommandHandler({
 
 client.on('ready', async (c) => {
     await connectDB();
+    
     await initSheet();
 
-    await fetchAndLogConfig();
+    await fetchAndLogConfigCWL();
     //await fetchAndLogConfigCWL();
     await saveData();
     const interval2 = setInterval(saveData, 5 * 60 * 1000); // 30 minutes in milliseconds
     const interval = setInterval(fetchAndLogConfig, 30 * 60 * 1000); // 30 minutes in milliseconds
     const interval3 = setInterval(fetchAndLogConfigCWL, 33 * 60 * 1000); // 30 minutes in milliseconds
+    
+   //await test();
 })
 
 
@@ -93,6 +104,18 @@ async function initSheet(){
   
 }
 
+
+async function test(){
+  const clan = await coc_client.getCurrentWar('#22P890PCU');
+  //turn clan object to json and write to text.json
+  //fs.writeFileSync('text.json', JSON.stringify(clan, null, 2));
+  const memeberId = "#9QVJ2CULY";
+  const mapPosition = clan.opponent.members.find(member => member.tag == memeberId).mapPosition;
+  
+  console.log(mapPosition);
+  //console.log(clan);
+
+}
 async function saveData(){
     try{
       const clan = await coc_client.getCurrentWar(process.env.CLAN_TAG);
@@ -104,7 +127,11 @@ async function saveData(){
           const attacks = member.attacks;
           for(const attack of attacks){
             var opTh = (await coc_client.getPlayer(attack.defenderTag)).townHallLevel;
+
+            const mapPosition = clan.opponent.members.find(player => player.tag == attack.defenderTag).mapPosition;
             attack.oppoentTownHall = opTh;
+            attack.mapPosition = member.mapPosition;
+            attack.opponentMapPosition = mapPosition;
           }
           let query = {
               tag: member.tag,
@@ -178,6 +205,7 @@ async function checkWar(clan){
 }
 
 async function fetchAndLogConfig() {
+  if(!coolDownArr.includes("On Cooldown")){
   const messages = await fetchIdkName();
   fs.readFile('config.json', 'utf8', async(err, data) => {
       if (err) {
@@ -217,11 +245,13 @@ async function fetchAndLogConfig() {
               }
           //console.log(configObject);
           await updateConfig(configObject);
-  });
+          await coolDown();
+  });}
 }
 
 async function fetchAndLogConfigCWL() {
-  console.log("Fetching and logging config");
+  if(!coolDownArr.includes("On Cooldown")){
+  //console.log("Fetching and logging config");
   const messages = await fetchCWL();
   fs.readFile('config.json', 'utf8', async(err, data) => {
       if (err) {
@@ -261,7 +291,8 @@ async function fetchAndLogConfigCWL() {
               }
           //console.log(configObject);
           await updateConfig(configObject);
-  });
+          await coolDown();
+  });}
 }
 
 async function updateConfig(updatedConfig){
@@ -299,8 +330,8 @@ async function fetchCWL(){
           scores.push(parseInt(totalScore));
       }
   }
-  console.log(scores.length);
-  console.log(names.length);
+  //console.log(scores.length);
+  //console.log(names.length);
   const { sortedScores, sortedNames } = sortScoresAndNames(scores, names);
 
   //loop through rows

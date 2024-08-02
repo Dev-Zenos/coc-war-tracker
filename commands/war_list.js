@@ -15,9 +15,10 @@ module.exports = {
             return;
         }
         else{
-            let message = "All the wars the bot has saved: \n" + "`";
+            let message = `Last the 10 wars that the bot has saved (in total: ${result.length}): \n` + "`";
             let counter = 1;
-            for(const war of result){
+            const lastTenValues = result.slice(-10);
+            for(const war of lastTenValues){
                 message += (counter + ".  Opponent Clan Tag: " + war.opponent_clan_tag + "\n");
                 message += "    Start Time: " + war.timestamp + "\n";
                 counter++;

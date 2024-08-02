@@ -50,7 +50,7 @@ async function updateSheet(updateData){
     var rows = await sheet.getRows(); // can pass in { limit, offset }
     
     var data = await MemberSchema.find(updateData);
-    console.log(data);
+    //console.log(data);
     for(const row of data){
       var indexObj = await find('Player tag', row.tag);
       var warScore = 0;
