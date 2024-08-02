@@ -66,9 +66,9 @@ client.on('ready', async (c) => {
     await fetchAndLogConfigCWL();
     //await fetchAndLogConfigCWL();
     await saveData();
-    const interval2 = setInterval(saveData, 5 * 60 * 1000); // 30 minutes in milliseconds
+    const interval2 = setInterval(saveData, 5 * 60 * 1000); // 5 minutes in milliseconds
     const interval = setInterval(fetchAndLogConfig, 30 * 60 * 1000); // 30 minutes in milliseconds
-    const interval3 = setInterval(fetchAndLogConfigCWL, 33 * 60 * 1000); // 30 minutes in milliseconds
+    const interval3 = setInterval(fetchAndLogConfigCWL, 33 * 60 * 1000); // 33 minutes in milliseconds
     
    //await test();
 })
