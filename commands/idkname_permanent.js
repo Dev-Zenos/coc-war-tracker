@@ -8,7 +8,7 @@ const fs = require('fs');
 
 var serviceAccountAuth;
 var doc;
-var sheetIndex = 4;
+var sheetIndex = 1;
 
 
 module.exports = {
@@ -25,6 +25,7 @@ module.exports = {
         const warScoreWidth = 6; // adjust as needed
         const donosScoreWidth = 7; // adjust as needed
         const totalScoreWidth = 8; // adjust as needed
+        const Avg_TarWidth = 9;
         for (const row of rows) {
             let name = row.get('Name').padEnd(nameWidth, ' ');
             let warScore = row.get('Total war score').toString().padEnd(warScoreWidth, ' ');
@@ -32,18 +33,31 @@ module.exports = {
             let totalScore = row.get('Total score');
             //console.log(totalScore);
             if(!isNaN(parseInt(totalScore))){
-                names.push(`${name}${warScore}${donosScore}`);
+                let nameTag = row.get('Player tag');
+                const query = { tag: nameTag, timestamp: { $regex: reg } };
+                let member = await MemberSchema.find(query);
+                //find all members after August 10th 
+                
+                let attack = 0;
+                let counter = 0;
+                for(const mem of member){
+                    for(const atk of mem.attacks){
+                        attack += atk.opponentMapPosition;
+                        counter++;
+                    }
+                }
+                let avgTar = attack/counter;
+                avgTar = (avgTar).toFixed(2).toString().padEnd(Avg_TarWidth, ' ');
+                names.push(`${name}${warScore}${donosScore}${avgTar}`);
                 //console.log(parseInt(totalScore));
                 scores.push(parseInt(totalScore));
             }
         }
-        console.log(scores.length);
-        console.log(names.length);
         const { sortedScores, sortedNames } = sortScoresAndNames(scores, names);
   
         //loop through rows
         let arr = [];
-        let startStr = "No. Name            War   Dono   Total   \n";
+        let startStr = "No. Name            War   Dono   Avg_Tar  Total\n";
         let message = "```"+startStr;
         let counter = 0;
         for (const row of sortedNames) {

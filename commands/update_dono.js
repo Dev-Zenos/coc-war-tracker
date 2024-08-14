@@ -34,6 +34,7 @@ module.exports = {
     },
     Globalcooldown_60s: true,
     devOnly: true,
+    disabled: true,
 }
 
 

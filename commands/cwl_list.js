@@ -4,11 +4,13 @@ const MemberSchema = require('./../models/war_data');
 const { GoogleSpreadsheet } =  require('google-spreadsheet');
 const {JWT} = require('google-auth-library');
 const { parse } = require('dotenv');
+const { disabled } = require('./update_dono');
 
 var serviceAccountAuth;
 var doc;
-var sheetIndex = 5;
+var sheetIndex = 4;
 var seperator = 17;
+const reg = /Aug/i;
 
 
 module.exports = {
@@ -22,10 +24,11 @@ module.exports = {
 
         let scores = [];
         let names = [];
-        const nameWidth = 16; // adjust as needed
+        const nameWidth = 17; // adjust as needed
         const warScoreWidth = 6; // adjust as needed
         const donosScoreWidth = 7; // adjust as needed
         const totalScoreWidth = 8; // adjust as needed
+        const Avg_TarWidth = 9;
         for (const row of rows) {
             let name = row.get('Name').padEnd(nameWidth, ' ');
             let warScore = parseInt(row.get('Total war score')).toString().padEnd(warScoreWidth, ' ');
@@ -33,7 +36,20 @@ module.exports = {
             let totalScore = row.get('Total score');
             //console.log(totalScore);
             if(!isNaN(parseInt(totalScore))){
-                names.push(`${name}${warScore}${donosScore}`);
+                let nameTag = row.get('Player tag');
+                const query = { tag: nameTag, timestamp: { $regex: reg } };
+                let member = await MemberSchema.find(query);
+                let attack = 0;
+                let counter = 0;
+                for(const mem of member){
+                    for(const atk of mem.attacks){
+                        attack += atk.opponentMapPosition;
+                        counter++;
+                    }
+                }
+                let avgTar = attack/counter;
+                avgTar = (avgTar).toFixed(2).toString().padEnd(Avg_TarWidth, ' ');
+                names.push(`${name}${warScore}${donosScore}${avgTar}`);
                 //console.log(parseInt(totalScore));
                 scores.push(parseInt(totalScore));
             }
@@ -44,7 +60,7 @@ module.exports = {
   
         //loop through rows
         let arr = [];
-        let startStr = "No. Name            War   Dono   Total   \n";
+        let startStr = "No. Name             War   Dono   Avg_Tar  Total\n";
         let message = "```"+startStr;
         let counter = 0;
         for (const row of sortedNames) {

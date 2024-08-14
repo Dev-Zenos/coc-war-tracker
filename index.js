@@ -25,6 +25,7 @@ const coc_client = new API({ keys: [process.env.API_KEY] });
 var serviceAccountAuth;
 var doc;
 var coolDownArr = [];
+var disableAutoUpdate = false;
 
 async function coolDown(){
   coolDownArr.push("On Cooldown");;
@@ -63,12 +64,14 @@ client.on('ready', async (c) => {
     
     await initSheet();
 
-    await fetchAndLogConfigCWL();
-    //await fetchAndLogConfigCWL();
     await saveData();
     const interval2 = setInterval(saveData, 5 * 60 * 1000); // 5 minutes in milliseconds
-    const interval = setInterval(fetchAndLogConfig, 30 * 60 * 1000); // 30 minutes in milliseconds
-    const interval3 = setInterval(fetchAndLogConfigCWL, 33 * 60 * 1000); // 33 minutes in milliseconds
+    if(!disableAutoUpdate)
+    {
+      await fetchAndLogConfigCWL();
+      const interval = setInterval(fetchAndLogConfig, 30 * 60 * 1000); // 30 minutes in milliseconds
+      const interval3 = setInterval(fetchAndLogConfigCWL, 33 * 60 * 1000); // 33 minutes in milliseconds
+    }
     
    //await test();
 })
@@ -104,15 +107,12 @@ async function initSheet(){
   
 }
 
+const reg = /Aug (1[0-9]|2[0-9]|3[01])/;
 
 async function test(){
-  const clan = await coc_client.getCurrentWar('#22P890PCU');
-  //turn clan object to json and write to text.json
-  //fs.writeFileSync('text.json', JSON.stringify(clan, null, 2));
-  const memeberId = "#9QVJ2CULY";
-  const mapPosition = clan.opponent.members.find(member => member.tag == memeberId).mapPosition;
-  
-  console.log(mapPosition);
+  const query = { timestamp: { $regex: reg } };
+  const result = await warSchema.find(query);
+  console.log("Here: " + result);
   //console.log(clan);
 
 }
@@ -308,7 +308,7 @@ async function updateConfig(updatedConfig){
 }
 
 async function fetchCWL(){
-  const sheet = doc.sheetsByIndex[5];
+  const sheet = doc.sheetsByIndex[4];
   const rows = await sheet.getRows(); // can pass in { limit, offset }
   //console.log(rows.length);
 
@@ -318,25 +318,39 @@ async function fetchCWL(){
   const warScoreWidth = 6; // adjust as needed
   const donosScoreWidth = 7; // adjust as needed
   const totalScoreWidth = 8; // adjust as needed
+  const Avg_TarWidth = 9;
   for (const row of rows) {
-      let name = row.get('Name').padEnd(nameWidth, ' ');
-      let warScore = parseInt(row.get('Total war score')).toString().padEnd(warScoreWidth, ' ');
-      let donosScore = parseInt(row.get('Donos score')).toString().padEnd(donosScoreWidth, ' ');
-      let totalScore = row.get('Total score');
-      //console.log(totalScore);
-      if(!isNaN(parseInt(totalScore))){
-          names.push(`${name}${warScore}${donosScore}`);
-          //console.log(parseInt(totalScore));
-          scores.push(parseInt(totalScore));
-      }
-  }
-  //console.log(scores.length);
-  //console.log(names.length);
-  const { sortedScores, sortedNames } = sortScoresAndNames(scores, names);
-
-  //loop through rows
-  let arr = [];
-  let startStr = "No. Name            War   Dono   Total   \n";
+    let name = row.get('Name').padEnd(nameWidth, ' ');
+    let warScore = parseInt(row.get('Total war score')).toString().padEnd(warScoreWidth, ' ');
+    let donosScore = parseInt(row.get('Donos score')).toString().padEnd(donosScoreWidth, ' ');
+    let totalScore = row.get('Total score');
+            //console.log(totalScore);
+            if(!isNaN(parseInt(totalScore))){
+                let nameTag = row.get('Player tag');
+                const query = { tag: nameTag, timestamp: { $regex: reg } };
+                let member = await MemberSchema.find(query);
+                let attack = 0;
+                let counter = 0;
+                for(const mem of member){
+                    for(const atk of mem.attacks){
+                        attack += atk.opponentMapPosition;
+                        counter++;
+                    }
+                }
+                let avgTar = attack/counter;
+                avgTar = (avgTar).toFixed(2).toString().padEnd(Avg_TarWidth, ' ');
+                names.push(`${name}${warScore}${donosScore}${avgTar}`);
+                //console.log(parseInt(totalScore));
+                scores.push(parseInt(totalScore));
+            }
+        }
+        console.log(scores.length);
+        console.log(names.length);
+        const { sortedScores, sortedNames } = sortScoresAndNames(scores, names);
+  
+        //loop through rows
+        let arr = [];
+        let startStr = "No. Name             War   Dono   Avg_Tar  Total\n";
   let message = "```"+startStr;
   let counter = 0;
   for (const row of sortedNames) {
@@ -368,7 +382,7 @@ async function fetchCWL(){
 
 
 async function fetchIdkName(){
-  const sheet = doc.sheetsByIndex[4];
+  const sheet = doc.sheetsByIndex[1];
         const rows = await sheet.getRows(); // can pass in { limit, offset }
 
         let scores = [];
@@ -377,6 +391,7 @@ async function fetchIdkName(){
         const warScoreWidth = 6; // adjust as needed
         const donosScoreWidth = 7; // adjust as needed
         const totalScoreWidth = 8; // adjust as needed
+        const Avg_TarWidth = 9;
         for (const row of rows) {
             let name = row.get('Name').padEnd(nameWidth, ' ');
             let warScore = row.get('Total war score').toString().padEnd(warScoreWidth, ' ');
@@ -384,7 +399,22 @@ async function fetchIdkName(){
             let totalScore = row.get('Total score');
             //console.log(totalScore);
             if(!isNaN(parseInt(totalScore))){
-                names.push(`${name}${warScore}${donosScore}`);
+                let nameTag = row.get('Player tag');
+                const query = { tag: nameTag, timestamp: { $regex: reg } };
+                let member = await MemberSchema.find(query);
+                //find all members after August 10th 
+                
+                let attack = 0;
+                let counter = 0;
+                for(const mem of member){
+                    for(const atk of mem.attacks){
+                        attack += atk.opponentMapPosition;
+                        counter++;
+                    }
+                }
+                let avgTar = attack/counter;
+                avgTar = (avgTar).toFixed(2).toString().padEnd(Avg_TarWidth, ' ');
+                names.push(`${name}${warScore}${donosScore}${avgTar}`);
                 //console.log(parseInt(totalScore));
                 scores.push(parseInt(totalScore));
             }
@@ -395,7 +425,7 @@ async function fetchIdkName(){
   
         //loop through rows
         let arr = [];
-        let startStr = "No. Name            War   Dono   Total   \n";
+        let startStr = "No. Name            War   Dono   Avg_Tar  Total\n";
         let message = "```"+startStr;
         let counter = 0;
         for (const row of sortedNames) {
