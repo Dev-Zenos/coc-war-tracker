@@ -24,6 +24,7 @@ module.exports = {
         const nameWidth = 16; // adjust as needed
         const warScoreWidth = 8; // adjust as needed
         const Avg_TarWidth = 9;
+        const Avg_Star = 10;
         for (const row of rows) {
             let name = row.get('Name').padEnd(nameWidth, ' ');
             let warScore = row.get('Total war score').toString().padEnd(warScoreWidth, ' ');
@@ -35,16 +36,20 @@ module.exports = {
                 //find all members after August 10th 
                 
                 let attack = 0;
+                let stars = 0;
                 let counter = 0;
                 for(const mem of member){
                     for(const atk of mem.attacks){
                         attack += atk.opponentMapPosition;
+                        stars += atk.stars;
                         counter++;
                     }
                 }
                 let avgTar = attack/counter;
+                let avgStar = stars/counter;
                 avgTar = (avgTar).toFixed(2).toString().padEnd(Avg_TarWidth, ' ');
-                names.push(`${name}${warScore}${avgTar}`);
+                avgStar = (avgStar).toFixed(2).toString().padEnd(Avg_Star, ' ');
+                names.push(`${name}${warScore}${avgStar}${avgTar}`);
                 //console.log(parseInt(totalScore));
                 scores.push(parseInt(warScore));
             }
@@ -53,7 +58,7 @@ module.exports = {
   
         //loop through rows
         let arr = [];
-        let startStr = "No. Name            Score Avg_Tar\n";
+        let startStr = "No. Name            Score   Avg_Star  Avg_Tar\n";
         let message = "```"+startStr;
         let counter = 0;
         for (const row of sortedNames) {

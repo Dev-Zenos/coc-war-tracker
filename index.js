@@ -68,7 +68,7 @@ client.on('ready', async (c) => {
     const interval2 = setInterval(saveData, 5 * 60 * 1000); // 5 minutes in milliseconds
     if(!disableAutoUpdate)
     {
-      await fetchAndLogConfig();
+      await fetchAndLogConfigCWL();
       const interval = setInterval(fetchAndLogConfig, 30 * 60 * 1000); // 30 minutes in milliseconds
       const interval3 = setInterval(fetchAndLogConfigCWL, 33 * 60 * 1000); // 33 minutes in milliseconds
     }
@@ -332,6 +332,7 @@ async function fetchCWL(){
   const nameWidth = 16; // adjust as needed
         const warScoreWidth = 8; // adjust as needed
         const Avg_TarWidth = 9;
+        const Avg_Star = 10;
         for (const row of rows) {
             let name = row.get('Name').padEnd(nameWidth, ' ');
             let warScore = row.get('Total war score').toString().padEnd(warScoreWidth, ' ');
@@ -343,16 +344,20 @@ async function fetchCWL(){
                 //find all members after August 10th 
                 
                 let attack = 0;
+                let stars = 0;
                 let counter = 0;
                 for(const mem of member){
                     for(const atk of mem.attacks){
                         attack += atk.opponentMapPosition;
+                        stars += atk.stars;
                         counter++;
                     }
                 }
                 let avgTar = attack/counter;
+                let avgStar = stars/counter;
                 avgTar = (avgTar).toFixed(2).toString().padEnd(Avg_TarWidth, ' ');
-                names.push(`${name}${warScore}${avgTar}`);
+                avgStar = (avgStar).toFixed(2).toString().padEnd(Avg_Star, ' ');
+                names.push(`${name}${warScore}${avgStar}${avgTar}`);
                 //console.log(parseInt(totalScore));
                 scores.push(parseInt(warScore));
             }
@@ -361,7 +366,7 @@ async function fetchCWL(){
   
         //loop through rows
         let arr = [];
-        let startStr = "No. Name            Score Avg_Tar\n";
+        let startStr = "No. Name            Score   Avg_Star  Avg_Tar\n";
         let message = "```"+startStr;
         let counter = 0;
         for (const row of sortedNames) {
@@ -400,6 +405,7 @@ async function fetchIdkName(){
         const nameWidth = 16; // adjust as needed
         const warScoreWidth = 8; // adjust as needed
         const Avg_TarWidth = 9;
+        const Avg_Star = 10;
         for (const row of rows) {
             let name = row.get('Name').padEnd(nameWidth, ' ');
             let warScore = row.get('Total war score').toString().padEnd(warScoreWidth, ' ');
@@ -411,16 +417,20 @@ async function fetchIdkName(){
                 //find all members after August 10th 
                 
                 let attack = 0;
+                let stars = 0;
                 let counter = 0;
                 for(const mem of member){
                     for(const atk of mem.attacks){
                         attack += atk.opponentMapPosition;
+                        stars += atk.stars;
                         counter++;
                     }
                 }
                 let avgTar = attack/counter;
+                let avgStar = stars/counter;
                 avgTar = (avgTar).toFixed(2).toString().padEnd(Avg_TarWidth, ' ');
-                names.push(`${name}${warScore}${avgTar}`);
+                avgStar = (avgStar).toFixed(2).toString().padEnd(Avg_Star, ' ');
+                names.push(`${name}${warScore}${avgStar}${avgTar}`);
                 //console.log(parseInt(totalScore));
                 scores.push(parseInt(warScore));
             }
@@ -429,7 +439,7 @@ async function fetchIdkName(){
   
         //loop through rows
         let arr = [];
-        let startStr = "No. Name            Score Avg_Tar\n";
+        let startStr = "No. Name            Score   Avg_Star  Avg_Tar\n";
         let message = "```"+startStr;
         let counter = 0;
         for (const row of sortedNames) {
