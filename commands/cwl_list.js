@@ -10,7 +10,7 @@ var serviceAccountAuth;
 var doc;
 var sheetIndex = 4;
 var seperator = 17;
-const reg = /Aug/i;
+const reg = /Aug (1[0-9]|2[0-9]|3[01])/;
 
 
 module.exports = {
@@ -24,21 +24,19 @@ module.exports = {
 
         let scores = [];
         let names = [];
-        const nameWidth = 17; // adjust as needed
-        const warScoreWidth = 6; // adjust as needed
-        const donosScoreWidth = 7; // adjust as needed
-        const totalScoreWidth = 8; // adjust as needed
+        const nameWidth = 16; // adjust as needed
+        const warScoreWidth = 8; // adjust as needed
         const Avg_TarWidth = 9;
         for (const row of rows) {
             let name = row.get('Name').padEnd(nameWidth, ' ');
-            let warScore = parseInt(row.get('Total war score')).toString().padEnd(warScoreWidth, ' ');
-            let donosScore = parseInt(row.get('Donos score')).toString().padEnd(donosScoreWidth, ' ');
-            let totalScore = row.get('Total score');
+            let warScore = row.get('Total war score').toString().padEnd(warScoreWidth, ' ');
             //console.log(totalScore);
-            if(!isNaN(parseInt(totalScore))){
+            if(!isNaN(parseInt(warScore))){
                 let nameTag = row.get('Player tag');
                 const query = { tag: nameTag, timestamp: { $regex: reg } };
                 let member = await MemberSchema.find(query);
+                //find all members after August 10th 
+                
                 let attack = 0;
                 let counter = 0;
                 for(const mem of member){
@@ -49,25 +47,22 @@ module.exports = {
                 }
                 let avgTar = attack/counter;
                 avgTar = (avgTar).toFixed(2).toString().padEnd(Avg_TarWidth, ' ');
-                names.push(`${name}${warScore}${donosScore}${avgTar}`);
+                names.push(`${name}${warScore}${avgTar}`);
                 //console.log(parseInt(totalScore));
-                scores.push(parseInt(totalScore));
+                scores.push(parseInt(warScore));
             }
         }
-        console.log(scores.length);
-        console.log(names.length);
         const { sortedScores, sortedNames } = sortScoresAndNames(scores, names);
   
         //loop through rows
         let arr = [];
-        let startStr = "No. Name             War   Dono   Avg_Tar  Total\n";
+        let startStr = "No. Name            Score Avg_Tar\n";
         let message = "```"+startStr;
         let counter = 0;
         for (const row of sortedNames) {
-            let formattedScore = sortedScores[counter].toString().padEnd(totalScoreWidth, ' ');
             let rank = (counter + 1).toString().padEnd(4, ' ');
             //console.log(sortedScores[counter]);
-            message += rank + row + formattedScore + "\n";
+            message += rank + row + "\n";
             if(message.length > 1800){
                 message += "```";
                 arr.push(message);
