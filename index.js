@@ -61,6 +61,7 @@ new CommandHandler({
 
 client.on('ready', async (c) => {
     await connectDB();
+    await test();
     
     await initSheet();
 
@@ -68,7 +69,7 @@ client.on('ready', async (c) => {
     const interval2 = setInterval(saveData, 5 * 60 * 1000); // 5 minutes in milliseconds
     if(!disableAutoUpdate)
     {
-      await fetchAndLogConfigCWL();
+      await fetchAndLogConfig();
       const interval = setInterval(fetchAndLogConfig, 30 * 60 * 1000); // 30 minutes in milliseconds
       const interval3 = setInterval(fetchAndLogConfigCWL, 33 * 60 * 1000); // 33 minutes in milliseconds
     }
@@ -110,9 +111,10 @@ async function initSheet(){
 const reg = /Aug (1[0-9]|2[0-9]|3[01])/;
 
 async function test(){
-  const query = { timestamp: { $regex: reg } };
-  const result = await warSchema.find(query);
-  console.log("Here: " + result);
+  const query = await coc_client.getClanWarLog(process.env.CLAN_TAG);
+  console.log("Here: " + query);
+  //write objeect to test.json
+  fs.writeFileSync('test.json', JSON.stringify(query, null, 2));
   //console.log(clan);
 
 }
