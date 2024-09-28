@@ -12,9 +12,21 @@ const reg = /Sep (1[0-9]|2[0-9]|3[01])/;
 
 
 module.exports = {
-    data: new SlashCommandBuilder().setName('idkname').setDescription('Gets your clan score!'), 
+    data: new SlashCommandBuilder()
+        .setName('idkname')
+        .setDescription('Gets your clan score!')
+        .addStringOption(option => 
+            option.setName('sortby')
+                .setDescription('Sort by warscore or avg_stars or avg_tar')
+                .setRequired(false)
+                .addChoices(
+                    { name: 'warscore', value: 'warscore' },
+                    { name: 'avg_stars', value: 'avg_stars' },
+                    { name: 'avg_tar', value: 'avg_tar' },
+                )),
     run: async({ interaction }) => {
         await interaction.deferReply();
+        const sortBy = interaction.options.getString('sortby') || 'warscore'; // Default to 'warscore', 
         await initSheet();
         const sheet = doc.sheetsByIndex[sheetIndex];
         const rows = await sheet.getRows(); // can pass in { limit, offset }
@@ -51,7 +63,22 @@ module.exports = {
                 avgStar = (avgStar).toFixed(2).toString().padEnd(Avg_Star, ' ');
                 names.push(`${name}${warScore}${avgStar}${avgTar}`);
                 //console.log(parseInt(totalScore));
-                scores.push(parseInt(warScore));
+                if(sortBy === 'avg_stars'){
+                    if(isNaN(parseFloat(avgStar))){
+                        scores.push(0);
+                    }
+                    else
+                        scores.push(parseFloat(avgStar));
+                }
+                else if(sortBy === 'avg_tar'){
+                    if(isNaN(parseFloat(avgTar))){
+                        scores.push(-100);
+                    }
+                    else
+                        scores.push(-1 * parseFloat(avgTar));
+                }
+                else
+                    scores.push(parseInt(warScore));
             }
         }
         const { sortedScores, sortedNames } = sortScoresAndNames(scores, names);
