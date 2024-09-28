@@ -8,9 +8,9 @@ const { disabled } = require('./update_dono');
 
 var serviceAccountAuth;
 var doc;
-var sheetIndex = 4;
+var sheetIndex = 6;
 var seperator = 17;
-const reg = /Aug (1[0-9]|2[0-9]|3[01])/;
+const reg = /Sep (1[0-9]|2[0-9]|3[01])/;
 
 
 module.exports = {
@@ -29,8 +29,8 @@ module.exports = {
         const Avg_TarWidth = 9;
         const Avg_Star = 10;
         for (const row of rows) {
-            let name = row.get('Name').padEnd(nameWidth, ' ');
-            let warScore = row.get('Total war score').toString().padEnd(warScoreWidth, ' ');
+            let name = ("" + row.get('Name')).padEnd(nameWidth, ' ');
+            let warScore = ("" + row.get('Total war score')).toString().padEnd(warScoreWidth, ' ');
             //console.log(totalScore);
             if(!isNaN(parseInt(warScore))){
                 let nameTag = row.get('Player tag');

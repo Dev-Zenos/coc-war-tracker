@@ -12,8 +12,8 @@ module.exports = {
         await interaction.deferReply();
 
         await initSheet();
-        const CSVBuffer = await doc.sheetsByIndex[4].downloadAsCSV(true);
-        const CWLBuffer = await doc.sheetsByIndex[5].downloadAsCSV(true);
+        const CSVBuffer = await doc.sheetsByIndex[1].downloadAsCSV(true);
+        const CWLBuffer = await doc.sheetsByIndex[6].downloadAsCSV(true);
 
   
 
