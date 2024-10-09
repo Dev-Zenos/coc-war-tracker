@@ -9,7 +9,7 @@ const fs = require('fs');
 var serviceAccountAuth;
 var doc;
 var sheetIndex = 1;
-const reg = /Sep (1[0-9]|2[0-9]|3[01])/;
+const reg = /Oct (1[0-9]|2[0-9]|3[01])/;
 
 
 module.exports = {

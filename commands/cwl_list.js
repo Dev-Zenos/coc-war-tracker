@@ -10,7 +10,7 @@ var serviceAccountAuth;
 var doc;
 var sheetIndex = 6;
 var seperator = 17;
-const reg = /Sep (1[0-9]|2[0-9]|3[01])/;
+const reg = /Oct (1[0-9]|2[0-9]|3[01])/;
 
 
 module.exports = {
